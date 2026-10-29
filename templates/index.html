@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Storico Meteo</title>
+    <style>
+        body { 
+            font-family: Helvetica, Arial, sans-serif; 
+            background: #f4f7f8;
+            margin: 0; 
+            padding: 30px; 
+            color: #003459; 
+        }
+        .card { 
+            background: white; 
+            max-width: 480px; 
+            margin: 0 auto 20px;
+            padding: 25px 30px; 
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+        }
+        h1 { 
+            margin-top: 0; 
+            font-size: 26px; 
+        }
+        h1 span { 
+            color: #00BFC8; 
+        }
+        select, button { 
+            font-size: 16px; 
+            padding: 8px 14px; 
+            border-radius: 6px; 
+        }
+        select { 
+            border: 1px solid #ccc; 
+            min-width: 160px; 
+        }
+        button { 
+            background: #00BFC8; 
+            color: white; 
+            border: none;
+            font-weight: bold; 
+            cursor: pointer; 
+        }
+        button:hover { 
+            background: #009aa2; 
+        }
+        .risultato { 
+            border-left: 5px solid #00BFC8; 
+            padding: 10px 16px;
+            margin-top: 18px; 
+            background: #f0fbfc; 
+        }
+        .risultato .temp { 
+            font-size: 32px; 
+            font-weight: bold; 
+        }
+        .errore { 
+            border-left: 5px solid #e74c3c; 
+            padding: 10px 16px;
+            margin-top: 18px; 
+            background: #fdf0ef; 
+            color: #c0392b; 
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 10px; 
+        }
+        th { 
+            text-align: left; 
+            color: #888; 
+            font-size: 13px;
+            border-bottom: 2px solid #00BFC8; 
+            padding: 6px 4px; 
+        }
+        td { 
+            padding: 6px 4px; 
+            border-bottom: 1px solid #eee; 
+            font-size: 14px; 
+        }
+        .vuoto { 
+            color: #999; 
+            font-style: italic; 
+        }
+        /* Stile per il pulsante cancella tutto bonus */
+        .btn-cancella {
+            background: #e74c3c;
+            margin-top: 15px;
+        }
+        .btn-cancella:hover {
+            background: #c0392b;
+        }
+        /* Stile colonne icone e azioni nello storico */
+        .col-icona {
+            font-size: 18px;
+            text-align: center;
+            width: 40px;
+        }
+        .col-azione {
+            text-align: center;
+            width: 40px;
+        }
+        .btn-elimina-singolo {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            transition: transform 0.2s;
+        }
+        .btn-elimina-singolo:hover {
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+
+    {# [ES.3] Template Jinja2: Flask sostituisce le doppie graffe e i blocchi
+       for/if con i dati Python passati da render_template. #}
+
+    <div class="card">
+        <h1>Storico <span>Meteo</span></h1>
+        
+        <form action="/cerca" method="POST">
+            <select name="citta">
+                {# [ES.3-1] Cicla su lista_citta e crea una option per ogni città. #}
+                {% for c in lista_citta %}
+                    <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Cerca</button>
+        </form>
+
+        {# [ES.3-2] Mostra il box risultato SOLO se risultato non è None. #}
+        {% if risultato %}
+            <div class="risultato">
+                <div class="temp">{{ risultato.icona }} {{ risultato.temperatura }} °C</div>
+                <div>{{ risultato.citta }} — {{ risultato.descrizione }}</div>
+                <div>Vento: {{ risultato.vento }} km/h</div>
+            </div>
+        {% endif %}
+
+        {% if errore %}
+            <div class="errore">{{ errore }}</div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>Ultime ricerche</h2>
+        {% if ricerche %}
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px; text-align: center;">Meteo</th>
+                        <th>Città</th>
+                        <th>Temperatura</th>
+                        <th>Data</th>
+                        <th style="width: 40px; text-align: center;">Rimuovi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {# [ES.3-3] Cicla su ricerche e crea una riga per ognuna: #}
+                    {% for r in ricerche %}
+                        <tr>
+                            <td class="col-icona">{{ r.icona }}</td>
+                            <td>{{ r.citta }}</td>
+                            <td>{{ r.temperatura }} °C</td>
+                            <td>{{ r.data }}</td>
+                            <td class="col-azione">
+                                <form action="/cancella/{{ r.id }}" method="POST" style="margin: 0; display: inline;">
+                                    <button type="submit" class="btn-elimina-singolo" onclick="return confirm('Eliminare questa ricerca?');" title="Rimuovi ricerca">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {# [BONUS] Form con pulsante "Cancella storico" completo #}
+            <form action="/cancella" method="POST" style="text-align: right;">
+                <button type="submit" class="btn-cancella" onclick="return confirm('Sei sicuro di voler svuotare interamente lo storico delle ricerche?');">
+                    Cancella tutto lo storico
+                </button>
+            </form>
+        {% else %}
+            <p class="vuoto">Nessuna ricerca salvata.</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>
